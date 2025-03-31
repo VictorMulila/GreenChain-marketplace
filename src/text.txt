@@ -1,0 +1,93 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract MarketplaceWithInspection {
+    enum InspectionStatus { PENDING, APPROVED, REJECTED }
+
+    struct Item {
+        uint id;
+        string name;
+        uint price;
+        address payable seller;
+        address buyer;
+        address inspector;
+        bool isSold;
+        bool exists;
+        InspectionStatus inspectionStatus;
+    }
+
+    uint public itemCount = 0;
+    mapping(uint => Item) public items;
+    mapping(address => uint[]) public ownedItems;
+
+    event ItemListed(uint indexed id, string name, uint price, address seller);
+    event ItemPurchased(uint indexed id, address buyer, uint price, address inspector);
+    event InspectionApproved(uint indexed id);
+    event InspectionRejected(uint indexed id);
+    event FundsReleased(uint indexed id, address seller);
+    event FundsRefunded(uint indexed id, address buyer);
+
+    function listItem(string memory _name, uint _price) public {
+        require(_price > 0, "Price must be greater than zero");
+
+        itemCount++;
+        items[itemCount] = Item(
+            itemCount,
+            _name,
+            _price,
+            payable(msg.sender),
+            address(0),
+            address(0),
+            false,
+            true,
+            InspectionStatus.PENDING
+        );
+        ownedItems[msg.sender].push(itemCount);
+        
+        emit ItemListed(itemCount, _name, _price, msg.sender);
+    }
+
+    function purchaseItem(uint _id, address _inspector) public payable {
+        Item storage item = items[_id];
+        require(item.exists, "Item does not exist");
+        require(msg.value == item.price, "Incorrect price");
+        require(!item.isSold, "Item already sold");
+        require(msg.sender != item.seller, "Seller cannot buy their own item");
+
+        item.buyer = msg.sender;
+        item.inspector = _inspector;
+        item.isSold = true;
+        
+        emit ItemPurchased(_id, msg.sender, item.price, _inspector);
+    }
+
+    function approveInspection(uint _id) public {
+        Item storage item = items[_id];
+        require(msg.sender == item.inspector, "Only inspector can approve");
+        require(item.isSold, "Item not sold yet");
+        require(item.inspectionStatus == InspectionStatus.PENDING, "Inspection already completed");
+
+        item.inspectionStatus = InspectionStatus.APPROVED;
+        item.seller.transfer(item.price);
+        
+        emit InspectionApproved(_id);
+        emit FundsReleased(_id, item.seller);
+    }
+
+    function rejectInspection(uint _id) public {
+        Item storage item = items[_id];
+        require(msg.sender == item.inspector, "Only inspector can reject");
+        require(item.isSold, "Item not sold yet");
+        require(item.inspectionStatus == InspectionStatus.PENDING, "Inspection already completed");
+
+        item.inspectionStatus = InspectionStatus.REJECTED;
+        payable(item.buyer).transfer(item.price);
+        
+        emit InspectionRejected(_id);
+        emit FundsRefunded(_id, item.buyer);
+    }
+
+    function getInspectionStatus(uint _id) public view returns (InspectionStatus) {
+        return items[_id].inspectionStatus;
+    }
+}

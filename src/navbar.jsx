@@ -6,8 +6,9 @@ const Navbar = ({ account, isConnected, connectWallet }) => {
   return (
     <nav className="navbar">
       <div className="nav-left">
-        <Link className="nav-brand" to="/">🛒 GreenChain </Link>
+        <Link className="nav-brand" to="/">🛒 GreenTrack </Link>
         <Link className="nav-link" to="/">Home</Link>
+        <Link className="nav-link" to="/buy">Buy</Link>
         <Link className="nav-link" to="/list">List Item</Link>
         <Link className="nav-link" to="/myitems">My Items</Link>
      

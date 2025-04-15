@@ -6,6 +6,7 @@ import './App.css';
 import OwnedItems from './OwnedItems';
 import ItemsForSale from './itemsForsale';
 import Navbar from './navbar.jsx';
+import Home from './home';
 
 
 function App() {
@@ -340,12 +341,12 @@ function App() {
           <Routes>
             <Route
               path="/"
-              element={
-                <>
-                  <h1 >Marketplace</h1>
-                  {<ItemsForSale items={items} account={account} purchaseItem={purchaseItem} />}
-                </>
-              }
+              element={ <Home />  }
+            />
+
+             <Route
+              path="/buy"
+              element= {<ItemsForSale items={items} account={account} purchaseItem={purchaseItem} />}
             />
             <Route
               path="/list"
